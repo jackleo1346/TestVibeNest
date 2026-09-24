@@ -415,7 +415,7 @@ func (l statusLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	isTunnel := r.URL.Path == l.pathXH || r.URL.Path == l.pathWS ||
 		strings.HasPrefix(r.URL.Path, l.pathXH+"/") || strings.HasPrefix(r.URL.Path, l.pathWS+"/")
-	isHealth := r.URL.Path == "/healthz"
+	isHealth := r.URL.Path == "/healthz" || r.URL.Path == "/readyz" || r.URL.Path == "/health"
 
 	if (isTunnel || isHealth) && rec.statusCode < 400 {
 		return
@@ -486,7 +486,8 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+	// VibeNest App Readiness Handler: Probes /readyz -> /healthz -> /health
+	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		snap := hm.getSnapshot()
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
@@ -496,7 +497,11 @@ func main() {
 			w.WriteHeader(http.StatusOK)
 		}
 		_ = json.NewEncoder(w).Encode(snap)
-	})
+	}
+
+	mux.HandleFunc("GET /healthz", healthHandler)
+	mux.HandleFunc("GET /readyz", healthHandler)
+	mux.HandleFunc("GET /health", healthHandler)
 
 	mux.Handle(pathXH, proxyXH)
 	mux.Handle(pathXH+"/", proxyXH)
