@@ -440,7 +440,6 @@ func camo404(w http.ResponseWriter, r *http.Request) {
 func applyMemoryLimits() {
 	limitStr := strings.TrimSpace(os.Getenv("GOMEMLIMIT"))
 	if limitStr == "" {
-		// Specifically calibrated for VibeNest's 256MB baseline container
 		debug.SetMemoryLimit(160 * 1024 * 1024)
 		log.Println("[Runtime] GOMEMLIMIT defaulted to 160MiB (VibeNest 256MB baseline)")
 	} else {
@@ -486,7 +485,6 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// VibeNest App Readiness Handler: Probes /readyz -> /healthz -> /health
 	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		snap := hm.getSnapshot()
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
